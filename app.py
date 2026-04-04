@@ -5,6 +5,7 @@ import os
 from typing import Dict, List
 
 import gradio as gr
+from fastapi import FastAPI
 
 from baseline import heuristic_action, run_baseline
 from env.engine import GridLoadBalancerEnv
@@ -158,6 +159,26 @@ with gr.Blocks(css=CUSTOM_CSS, theme=gr.themes.Soft()) as demo:
     step_button.click(run_one_step, inputs=[env_state, log_state], outputs=[env_state, log_state, metrics_html, zones_html, raw_json, action_table])
     auto_button.click(run_full, inputs=task_selector, outputs=[env_state, log_state, metrics_html, zones_html, raw_json, action_table])
 
+app = FastAPI()
+
+
+@app.post("/reset")
+def reset_healthcheck():
+    env = GridLoadBalancerEnv(task_name="weekday_spike")
+    observation = env.reset(task_name="weekday_spike")
+    env.close()
+    return {
+        "ok": True,
+        "task": observation.task_name,
+        "benchmark": observation.benchmark,
+        "step": observation.step,
+    }
+
+
+app = gr.mount_gradio_app(app, demo, path="/")
+
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=int(os.getenv("PORT", "7860")))
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "7860")))
