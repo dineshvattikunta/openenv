@@ -11,10 +11,14 @@ requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115.0",
   "gradio>=5.0.0",
+  "openenv-core>=0.2.0",
   "openai>=1.40.0",
   "pydantic>=2.7.0",
   "uvicorn>=0.30.0",
 ]
 
+[project.scripts]
+server = "server.app:main"
+
 [tool.setuptools]
-packages = ["env"]
+packages = ["env", "server"]
