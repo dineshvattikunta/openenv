@@ -16,16 +16,21 @@ from env.utils import action_to_log_string
 
 CUSTOM_CSS = """
 :root {
-  --bg: #09121a;
-  --panel: rgba(15, 30, 40, 0.92);
-  --line: rgba(102, 221, 188, 0.16);
-  --ink: #e7f4ef;
-  --muted: #9ab8ae;
+  --bg: #08131d;
+  --panel: rgba(16, 26, 36, 0.96);
+  --panel-soft: rgba(24, 38, 51, 0.96);
+  --line: rgba(120, 196, 171, 0.22);
+  --ink: #eef7f3;
+  --muted: #9fb7b0;
+  --good: #38c793;
+  --warn: #f0b44c;
+  --bad: #ef6b6b;
+  --accent: #60d3ff;
 }
 body, .gradio-container {
   background:
-    radial-gradient(circle at top left, rgba(23, 92, 79, 0.35), transparent 42%),
-    radial-gradient(circle at top right, rgba(23, 68, 111, 0.28), transparent 30%),
+    radial-gradient(circle at top left, rgba(24, 96, 81, 0.34), transparent 42%),
+    radial-gradient(circle at top right, rgba(18, 82, 121, 0.24), transparent 30%),
     linear-gradient(180deg, #081018 0%, #0d1820 100%);
   color: var(--ink);
   font-family: "Segoe UI", "Trebuchet MS", sans-serif;
@@ -37,25 +42,52 @@ body, .gradio-container {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 .hero { padding: 20px 24px; margin-bottom: 10px; }
-.metric-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.metric-card { padding: 14px 16px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255,255,255,0.03); }
+.metric-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.metric-card { padding: 16px 18px; border-radius: 16px; border: 1px solid var(--line); background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); }
 .metric-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-.metric-value { font-size: 28px; font-weight: 700; }
-.zone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-.zone-card { padding: 14px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); }
-.zone-header { display:flex; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.metric-value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+.status-line { padding: 14px 16px; border-radius: 16px; background: var(--panel-soft); border: 1px solid var(--line); margin-bottom: 14px; }
+.status-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.status-copy { color: var(--muted); line-height: 1.5; }
+.zone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.zone-card { padding: 16px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.08); background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); }
+.zone-header { display:flex; justify-content:space-between; align-items: center; gap:12px; margin-bottom:12px; }
 .pill { padding:4px 10px; border-radius:999px; font-size:12px; text-transform:uppercase; font-weight:700; }
-.normal { background: rgba(49,196,141,0.18); color:#8bf0c7; }
-.warning { background: rgba(246,196,83,0.18); color:#ffd977; }
-.overload { background: rgba(240,91,91,0.18); color:#ffabab; }
-.critical { background: rgba(255,80,80,0.22); color:#ffd2d2; }
+.normal { background: rgba(56,199,147,0.18); color:#8ef3c9; }
+.warning { background: rgba(240,180,76,0.18); color:#ffd47a; }
+.overload { background: rgba(239,107,107,0.18); color:#ffb0b0; }
+.critical { background: rgba(239,107,107,0.24); color:#ffe0e0; }
 .tiny { color: var(--muted); font-size: 13px; }
+.zone-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.zone-table td { padding: 6px 0; vertical-align: top; }
+.zone-table td:first-child { color: var(--muted); width: 48%; }
+.zone-flag { margin-top: 10px; padding: 8px 10px; border-radius: 12px; font-size: 13px; }
+.flag-good { background: rgba(56,199,147,0.12); color: #8ef3c9; }
+.flag-warn { background: rgba(240,180,76,0.12); color: #ffd47a; }
+.flag-bad { background: rgba(239,107,107,0.14); color: #ffb0b0; }
 """
 
 
 def render_metrics(env: GridLoadBalancerEnv) -> str:
     state = env.state()
     critical = ", ".join(state.observation.critical_zones_at_risk) if state.observation.critical_zones_at_risk else "None"
+    score = state.metrics.task_score
+    if score >= 0.8:
+        verdict = "Strong run"
+    elif score >= 0.6:
+        verdict = "Stable run"
+    elif score >= 0.4:
+        verdict = "Needs improvement"
+    else:
+        verdict = "Weak run"
+
+    if state.observation.critical_zones_at_risk:
+        summary = f"Critical infrastructure is currently at risk in: {critical}."
+    elif state.observation.reserve_margin_percent < 15:
+        summary = "The grid is running, but spare capacity is low. One new fault could create outages."
+    else:
+        summary = "The grid is stable right now. No critical zones are currently in danger."
+
     return f"""
     <div class="metric-strip">
       <div class="metric-card"><div class="metric-label">Task Score</div><div class="metric-value">{state.metrics.task_score:.2f}</div></div>
@@ -63,25 +95,49 @@ def render_metrics(env: GridLoadBalancerEnv) -> str:
       <div class="metric-card"><div class="metric-label">Cumulative Reward</div><div class="metric-value">{state.metrics.cumulative_reward:.2f}</div></div>
       <div class="metric-card"><div class="metric-label">Critical Risk</div><div class="metric-value" style="font-size:18px">{critical}</div></div>
     </div>
+    <div class="status-line">
+      <div class="status-title">What This Means: {verdict}</div>
+      <div class="status-copy">{summary}</div>
+    </div>
     """
 
 
 def render_zones(observation) -> str:
     rows = []
     for zone in observation.zones:
+        if zone.unmet_demand_mw <= 0.01:
+            flag_class = "flag-good"
+            flag_text = "This zone is fully served."
+        elif zone.critical:
+            flag_class = "flag-bad"
+            flag_text = "This is a critical zone and it is short on power."
+        elif zone.unmet_demand_mw > zone.demand_mw * 0.25:
+            flag_class = "flag-bad"
+            flag_text = "This zone is heavily under-supplied."
+        else:
+            flag_class = "flag-warn"
+            flag_text = "This zone is running, but some demand is not being met."
         rows.append(
             f"""
             <div class="zone-card">
               <div class="zone-header">
                 <div>
                   <div><strong>{zone.label}</strong></div>
-                  <div class="tiny">{zone.zone_id} | priority {zone.priority}{' | critical' if zone.critical else ''}</div>
+                  <div class="tiny">Zone ID: {zone.zone_id} | Priority: {zone.priority}{' | Critical zone' if zone.critical else ''}</div>
                 </div>
                 <div class="pill {zone.status}">{zone.status}</div>
               </div>
-              <div class="tiny">Demand {zone.demand_mw:.1f} MW | Served {zone.served_mw:.1f} MW | Unmet {zone.unmet_demand_mw:.1f} MW</div>
-              <div class="tiny">Renewables {zone.renewable_output_mw:.1f} MW | Battery {zone.battery_soc_percent:.1f}% | Net transfer {zone.net_transfer_mw:.1f} MW</div>
-              <div class="tiny">Load shed {zone.load_shed_mw:.1f} MW | Fault {'yes' if zone.fault_active else 'no'}</div>
+              <table class="zone-table">
+                <tr><td>Power Needed</td><td>{zone.demand_mw:.1f} MW</td></tr>
+                <tr><td>Power Delivered</td><td>{zone.served_mw:.1f} MW</td></tr>
+                <tr><td>Missing Power</td><td>{zone.unmet_demand_mw:.1f} MW</td></tr>
+                <tr><td>Renewable Power</td><td>{zone.renewable_output_mw:.1f} MW</td></tr>
+                <tr><td>Battery Level</td><td>{zone.battery_soc_percent:.1f}%</td></tr>
+                <tr><td>Net Power Transfer</td><td>{zone.net_transfer_mw:.1f} MW</td></tr>
+                <tr><td>Load Shed</td><td>{zone.load_shed_mw:.1f} MW</td></tr>
+                <tr><td>Fault Present</td><td>{"Yes" if zone.fault_active else "No"}</td></tr>
+              </table>
+              <div class="zone-flag {flag_class}">{flag_text}</div>
             </div>
             """
         )
@@ -149,7 +205,7 @@ with gr.Blocks(css=CUSTOM_CSS, theme=gr.themes.Soft()) as demo:
     zones_html = gr.HTML(value="", elem_classes=["panel"])
     with gr.Row():
         action_table = gr.Dataframe(headers=["Step", "Action", "Reward", "Error", "Reward Summary"], value=[], interactive=False, wrap=True, label="Action Log")
-        raw_json = gr.Code(value="", language="json", label="Observation Snapshot")
+        raw_json = gr.Code(value="", language="json", label="Raw Observation JSON")
     with gr.Accordion("Task Metadata", open=False):
         gr.JSON(value=list_tasks())
     with gr.Accordion("Baseline Results", open=False):

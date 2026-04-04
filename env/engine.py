@@ -92,6 +92,7 @@ class GridLoadBalancerEnv:
             for battery in self.scenario.batteries
         }
         self._apply_exogenous_conditions(step_index=1)
+        self._recompute_initial_snapshot()
         self.observation = self._build_observation(last_action_error=None)
         return self.observation
 
@@ -559,3 +560,43 @@ class GridLoadBalancerEnv:
             batteries=batteries,
             summary=summary,
         )
+
+    def _recompute_initial_snapshot(self) -> None:
+        total_demand = 0.0
+        total_dispatchable = self.scenario.neighbor_import_capacity_mw
+        used_dispatchable = 0.0
+
+        for zone_id in self.zone_configs:
+            renewable = self.zone_state[zone_id]["renewable_output_mw"]
+            generator_output = sum(
+                self.generator_state[gid]["output_mw"]
+                for gid, cfg in self.generator_configs.items()
+                if cfg.zone_id == zone_id and self.generator_state[gid]["enabled"] and self.generator_state[gid]["available"]
+            )
+            battery_discharge = 0.0
+            local_supply = renewable + generator_output + battery_discharge
+            demand = self.zone_state[zone_id]["demand_mw"]
+            served = min(demand, local_supply)
+            unmet = max(0.0, demand - local_supply)
+            self.zone_state[zone_id]["served_mw"] = served
+            self.zone_state[zone_id]["unmet_demand_mw"] = unmet
+            self.zone_state[zone_id]["net_transfer_mw"] = 0.0
+            if unmet <= 0.01:
+                status = "normal"
+            elif unmet > demand * 0.25:
+                status = "critical" if self.zone_configs[zone_id].critical else "overload"
+            else:
+                status = "warning"
+            self.zone_state[zone_id]["status"] = status
+            total_demand += demand
+
+        for gen_id, gen_cfg in self.generator_configs.items():
+            if self.generator_state[gen_id]["available"]:
+                total_dispatchable += gen_cfg.max_output_mw
+                used_dispatchable += self.generator_state[gen_id]["output_mw"]
+
+        for battery_id, battery_cfg in self.battery_configs.items():
+            total_dispatchable += min(battery_cfg.max_discharge_mw, self._max_battery_discharge_mw(battery_id))
+
+        reserve = max(0.0, total_dispatchable - used_dispatchable)
+        self.reserve_margin_percent = clamp((reserve / total_demand) * 100.0 if total_demand else 100.0, 0.0, 100.0)
