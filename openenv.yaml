@@ -1,0 +1,32 @@
+name: grid-load-balancer
+version: 0.1.0
+benchmark: power_grid
+description: >
+  A city-scale power distribution environment where an AI agent balances load between zones,
+  dispatches generators, manages batteries, requests imports, and protects critical services.
+tags:
+  - openenv
+  - energy
+  - power-grid
+entrypoint:
+  module: env.engine
+  class: GridLoadBalancerEnv
+interfaces:
+  reset: reset
+  step: step
+  state: state
+models:
+  action: env.models.GridAction
+  observation: env.models.GridObservation
+  state: env.models.GridState
+tasks:
+  - id: weekday_spike
+    difficulty: easy
+    objective: Restore balance after a business district demand spike.
+  - id: sunset_transition
+    difficulty: medium
+    objective: Handle the evening peak while solar fades and wind varies.
+  - id: heatwave_failure
+    difficulty: hard
+    objective: Protect critical infrastructure after generator failure during a heatwave.
+
