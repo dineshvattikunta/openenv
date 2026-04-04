@@ -1,6 +1,6 @@
 ---
 title: Grid Load Balancer
-emoji: ⚡
+emoji: "⚡"
 colorFrom: green
 colorTo: blue
 sdk: docker
@@ -17,10 +17,10 @@ This repository includes:
 - typed Pydantic models for action, observation, and state
 - a root-level `inference.py` using the OpenAI client
 - a baseline heuristic
-- a polished Gradio Space UI
+- a Gradio Space UI
 - Docker packaging
 
-## Why this is a strong benchmark
+## Why this benchmark is strong
 
 This environment models a real control problem that utilities and virtual power plant operators face today:
 
@@ -87,22 +87,22 @@ The grader score is normalized to `[0.0, 1.0]` and is deterministic.
 
 ```text
 .
-├── env/
-│   ├── __init__.py
-│   ├── engine.py
-│   ├── models.py
-│   ├── rewards.py
-│   ├── tasks.py
-│   └── utils.py
-├── scripts/
-│   └── validate-submission.sh
-├── app.py
-├── baseline.py
-├── inference.py
-├── openenv.yaml
-├── Dockerfile
-├── requirements.txt
-└── README.md
+|- env/
+|  |- __init__.py
+|  |- engine.py
+|  |- models.py
+|  |- rewards.py
+|  |- tasks.py
+|  `- utils.py
+|- scripts/
+|  `- validate-submission.sh
+|- app.py
+|- baseline.py
+|- inference.py
+|- openenv.yaml
+|- Dockerfile
+|- requirements.txt
+`- README.md
 ```
 
 ## Inference script
@@ -155,6 +155,7 @@ The project ships with a Docker-based Space setup:
 - SDK: Docker
 - Entry: `python app.py`
 - Port: `7860`
+- Healthcheck route: `POST /reset`
 
 Recommended environment variables:
 
@@ -170,6 +171,7 @@ Before submission, verify:
 - `inference.py` is in the repo root
 - the Docker image builds
 - the Space launches
+- `POST /reset` returns `200`
 - task scores vary meaningfully across scenarios
 - `openenv validate` passes in your target environment
 
