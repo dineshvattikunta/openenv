@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grid-load-balancer-openenv"
+version = "0.1.0"
+description = "A real-world OpenEnv environment for AI-based city power grid balancing."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115.0",
+  "gradio>=5.0.0",
+  "openai>=1.40.0",
+  "pydantic>=2.7.0",
+  "uvicorn>=0.30.0",
+]
+
+[tool.setuptools]
+packages = ["env"]
