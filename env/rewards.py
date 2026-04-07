@@ -3,6 +3,8 @@ from __future__ import annotations
 from .models import GridMetrics, GridStepInfo, TaskScenario
 from .utils import clamp
 
+SCORE_EPSILON = 1e-3
+
 
 def compute_step_reward(
     served_ratio: float,
@@ -52,7 +54,9 @@ def compute_task_score(metrics: GridMetrics, scenario: TaskScenario) -> float:
         score -= 0.01 * metrics.critical_blackouts
         score -= 0.003 * metrics.blackouts
     score -= 0.02 * metrics.invalid_action_count
-    return clamp(score, 0.0, 1.0)
+    # The validator requires task graders to stay strictly inside (0, 1),
+    # never exactly 0.0 or 1.0.
+    return clamp(score, SCORE_EPSILON, 1.0 - SCORE_EPSILON)
 
 
 def summarize_reward(info: GridStepInfo) -> str:
