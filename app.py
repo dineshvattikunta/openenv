@@ -6,6 +6,7 @@ from typing import Dict, List
 
 import gradio as gr
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 from baseline import heuristic_action, run_baseline
 from env.engine import GridLoadBalancerEnv
@@ -13,6 +14,7 @@ from env.models import GridAction
 from env.rewards import summarize_reward
 from env.tasks import list_tasks
 from env.utils import action_to_log_string
+from graders.graders import grade_task, task_grade_breakdown
 
 CUSTOM_CSS = """
 :root {
@@ -66,6 +68,23 @@ body, .gradio-container {
 .flag-warn { background: rgba(240,180,76,0.12); color: #ffd47a; }
 .flag-bad { background: rgba(239,107,107,0.14); color: #ffb0b0; }
 """
+
+SUCCESS_THRESHOLDS = {
+    "weekday_spike": 0.75,
+    "sunset_transition": 0.70,
+    "heatwave_failure": 0.40,
+}
+
+API_ENV = GridLoadBalancerEnv(task_name="weekday_spike")
+API_ENV.reset(task_name="weekday_spike")
+
+
+class ResetRequest(BaseModel):
+    task_id: str = "weekday_spike"
+
+
+class StepRequest(BaseModel):
+    action: dict
 
 
 def render_metrics(env: GridLoadBalancerEnv) -> str:
@@ -218,9 +237,7 @@ with gr.Blocks(css=CUSTOM_CSS, theme=gr.themes.Soft()) as demo:
 app = FastAPI()
 
 def _reset_payload():
-    env = GridLoadBalancerEnv(task_name="weekday_spike")
-    observation = env.reset(task_name="weekday_spike")
-    env.close()
+    observation = API_ENV.reset(task_name="weekday_spike")
     return {
         "ok": True,
         "task": observation.task_name,
@@ -235,8 +252,80 @@ def reset_healthcheck_get():
 
 
 @app.post("/reset")
-def reset_healthcheck_post():
-    return _reset_payload()
+def reset_healthcheck_post(payload: ResetRequest | None = None):
+    task_id = payload.task_id if payload else "weekday_spike"
+    observation = API_ENV.reset(task_name=task_id)
+    return {
+        "ok": True,
+        "task": observation.task_name,
+        "benchmark": observation.benchmark,
+        "step": observation.step,
+    }
+
+
+@app.post("/step")
+def step_env(payload: StepRequest):
+    action = GridAction.model_validate(payload.action)
+    result = API_ENV.step(action)
+    return {
+        "observation": result.observation.model_dump(),
+        "reward": result.reward,
+        "done": result.done,
+        "info": result.info.model_dump(),
+    }
+
+
+@app.get("/state")
+def get_state():
+    return API_ENV.state().model_dump()
+
+
+@app.get("/tasks")
+def get_tasks():
+    tasks = []
+    for task_id, meta in list_tasks().items():
+        tasks.append(
+            {
+                "id": task_id,
+                "name": task_id.replace("_", " ").title(),
+                "difficulty": meta["difficulty"],
+                "objective": meta["objective"],
+                "success_threshold": SUCCESS_THRESHOLDS.get(task_id, 0.5),
+                "grader": f"graders.graders.grade_task:{task_id}",
+            }
+        )
+    return {"tasks": tasks}
+
+
+@app.get("/validate")
+def validate_env():
+    tasks = list_tasks()
+    return {
+        "valid": True,
+        "env_name": "grid-load-balancer",
+        "version": "0.1.0",
+        "task_count": len(tasks),
+        "graders_enabled": True,
+        "tasks": list(tasks.keys()),
+    }
+
+
+@app.get("/grade/{task_id}")
+def grade_env(task_id: str):
+    env = GridLoadBalancerEnv(task_name=task_id)
+    observation = env.reset(task_name=task_id)
+    done = False
+    while not done:
+        action = heuristic_action(observation)
+        result = env.step(action)
+        observation = result.observation
+        done = result.done
+    state = env.state()
+    grade = grade_task(state)
+    grade["breakdown"] = task_grade_breakdown(state)
+    grade["steps"] = len(state.metrics.reward_history)
+    env.close()
+    return grade
 
 
 app = gr.mount_gradio_app(app, demo, path="/")

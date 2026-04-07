@@ -4,10 +4,12 @@ benchmark: power_grid
 description: >
   A city-scale power distribution environment where an AI agent balances load between zones,
   dispatches generators, manages batteries, requests imports, and protects critical services.
+author: hackathon-submission
 tags:
   - openenv
   - energy
   - power-grid
+  - real-world
 entrypoint:
   module: env.engine
   class: GridLoadBalancerEnv
@@ -21,12 +23,38 @@ models:
   state: env.models.GridState
 tasks:
   - id: weekday_spike
+    name: Weekday Spike Recovery
     difficulty: easy
     objective: Restore balance after a business district demand spike.
+    max_steps: 8
+    success_threshold: 0.75
+    grader: graders.graders.grade_task
   - id: sunset_transition
+    name: Sunset Renewable Transition
     difficulty: medium
     objective: Handle the evening peak while solar fades and wind varies.
+    max_steps: 10
+    success_threshold: 0.70
+    grader: graders.graders.grade_task
   - id: heatwave_failure
+    name: Heatwave Generator Failure
     difficulty: hard
     objective: Protect critical infrastructure after generator failure during a heatwave.
-
+    max_steps: 12
+    success_threshold: 0.40
+    grader: graders.graders.grade_task
+reward:
+  type: shaped
+  description: >
+    Partial reward encourages blackout avoidance, critical-service protection,
+    energy efficiency, cost control, and response speed at every step.
+endpoints:
+  reset: POST /reset
+  step: POST /step
+  state: GET /state
+  tasks: GET /tasks
+  validate: GET /validate
+  grade: GET /grade/{task_id}
+runtime:
+  port: 7860
+  framework: fastapi
