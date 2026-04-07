@@ -217,9 +217,7 @@ with gr.Blocks(css=CUSTOM_CSS, theme=gr.themes.Soft()) as demo:
 
 app = FastAPI()
 
-
-@app.post("/reset")
-def reset_healthcheck():
+def _reset_payload():
     env = GridLoadBalancerEnv(task_name="weekday_spike")
     observation = env.reset(task_name="weekday_spike")
     env.close()
@@ -229,6 +227,16 @@ def reset_healthcheck():
         "benchmark": observation.benchmark,
         "step": observation.step,
     }
+
+
+@app.get("/reset")
+def reset_healthcheck_get():
+    return _reset_payload()
+
+
+@app.post("/reset")
+def reset_healthcheck_post():
+    return _reset_payload()
 
 
 app = gr.mount_gradio_app(app, demo, path="/")
