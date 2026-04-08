@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import Callable, Dict
 
 from env.models import GridState
 from env.rewards import SCORE_EPSILON
@@ -28,3 +28,28 @@ def grade_task(state: GridState) -> Dict[str, object]:
         "score": round(score, 4),
         "breakdown": task_grade_breakdown(state),
     }
+
+
+def grade_weekday_spike(state: GridState) -> Dict[str, object]:
+    grade = grade_task(state)
+    grade["task_id"] = "weekday_spike"
+    return grade
+
+
+def grade_sunset_transition(state: GridState) -> Dict[str, object]:
+    grade = grade_task(state)
+    grade["task_id"] = "sunset_transition"
+    return grade
+
+
+def grade_heatwave_failure(state: GridState) -> Dict[str, object]:
+    grade = grade_task(state)
+    grade["task_id"] = "heatwave_failure"
+    return grade
+
+
+GRADERS: Dict[str, Callable[[GridState], Dict[str, object]]] = {
+    "weekday_spike": grade_weekday_spike,
+    "sunset_transition": grade_sunset_transition,
+    "heatwave_failure": grade_heatwave_failure,
+}

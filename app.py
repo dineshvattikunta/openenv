@@ -14,7 +14,7 @@ from env.models import GridAction
 from env.rewards import summarize_reward
 from env.tasks import list_tasks
 from env.utils import action_to_log_string
-from graders.graders import grade_task, task_grade_breakdown
+from graders.graders import GRADERS, task_grade_breakdown
 
 CUSTOM_CSS = """
 :root {
@@ -289,9 +289,14 @@ def get_tasks():
                 "id": task_id,
                 "name": task_id.replace("_", " ").title(),
                 "difficulty": meta["difficulty"],
-                "objective": meta["objective"],
+                "description": meta["objective"],
+                "max_steps": {
+                    "weekday_spike": 8,
+                    "sunset_transition": 10,
+                    "heatwave_failure": 12,
+                }.get(task_id, 10),
                 "success_threshold": SUCCESS_THRESHOLDS.get(task_id, 0.5),
-                "grader": True,
+                "grader": task_id in GRADERS,
             }
         )
     return {"tasks": tasks}
@@ -312,6 +317,8 @@ def validate_env():
 
 @app.get("/grade/{task_id}")
 def grade_env(task_id: str):
+    if task_id not in GRADERS:
+        return {"task_id": task_id, "score": 0.001, "breakdown": {"error_score": 0.001}}
     env = GridLoadBalancerEnv(task_name=task_id)
     observation = env.reset(task_name=task_id)
     done = False
@@ -321,7 +328,7 @@ def grade_env(task_id: str):
         observation = result.observation
         done = result.done
     state = env.state()
-    grade = grade_task(state)
+    grade = GRADERS[task_id](state)
     grade["breakdown"] = task_grade_breakdown(state)
     env.close()
     return grade
