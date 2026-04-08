@@ -6,7 +6,7 @@ _EPS = 0.01
 
 
 def _clamp_open_interval(value: float) -> float:
-    return round(max(_EPS, min(1.0 - _EPS, float(value))), 4)
+    return round(max(_EPS, min(1.0 - _EPS, float(value))), 2)
 
 
 def _extract_from_mapping(data: dict[str, Any]) -> float | None:

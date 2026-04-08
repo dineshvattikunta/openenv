@@ -344,7 +344,7 @@ def grade_env(task_id: str):
     score = GRADERS[task_id](state)
     grade = {
         "task_id": task_id,
-        "score": round(float(score), 4),
+        "score": round(float(score), 2),
         "breakdown": task_grade_breakdown(state),
     }
     env.close()

@@ -10,7 +10,7 @@ from env.utils import clamp
 def task_grade_breakdown(state: GridState) -> Dict[str, float]:
     metrics = state.metrics
     def safe(value: float) -> float:
-        return round(clamp(value, SCORE_EPSILON, 1.0 - SCORE_EPSILON), 4)
+        return round(clamp(value, SCORE_EPSILON, 1.0 - SCORE_EPSILON), 2)
 
     return {
         "served_ratio": safe(metrics.average_served_ratio),
@@ -23,7 +23,7 @@ def task_grade_breakdown(state: GridState) -> Dict[str, float]:
 
 def grade_task(state: GridState) -> float:
     score = clamp(state.metrics.task_score, SCORE_EPSILON, 1.0 - SCORE_EPSILON)
-    return round(score, 4)
+    return round(score, 2)
 
 
 def grade_report(task_id: str, state: GridState) -> Dict[str, object]:
