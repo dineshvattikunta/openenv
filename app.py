@@ -75,6 +75,12 @@ SUCCESS_THRESHOLDS = {
     "heatwave_failure": 0.40,
 }
 
+TASK_GRADERS = {
+    "weekday_spike": "graders.graders.grade_weekday_spike",
+    "sunset_transition": "graders.graders.grade_sunset_transition",
+    "heatwave_failure": "graders.graders.grade_heatwave_failure",
+}
+
 API_ENV = GridLoadBalancerEnv(task_name="weekday_spike")
 API_ENV.reset(task_name="weekday_spike")
 
@@ -296,7 +302,7 @@ def get_tasks():
                     "heatwave_failure": 12,
                 }.get(task_id, 10),
                 "success_threshold": SUCCESS_THRESHOLDS.get(task_id, 0.5),
-                "grader": task_id in GRADERS,
+                "grader": TASK_GRADERS.get(task_id, "graders.graders.grade_task"),
             }
         )
     return {"tasks": tasks}
