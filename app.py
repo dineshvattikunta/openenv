@@ -340,8 +340,12 @@ def grade_env(task_id: str):
         observation = result.observation
         done = result.done
     state = env.state()
-    grade = GRADERS[task_id](state)
-    grade["breakdown"] = task_grade_breakdown(state)
+    score = GRADERS[task_id](state)
+    grade = {
+        "task_id": task_id,
+        "score": round(float(score), 4),
+        "breakdown": task_grade_breakdown(state),
+    }
     env.close()
     return grade
 

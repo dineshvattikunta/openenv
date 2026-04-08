@@ -21,46 +21,40 @@ def task_grade_breakdown(state: GridState) -> Dict[str, float]:
     }
 
 
-def grade_task(state: GridState) -> Dict[str, object]:
+def grade_task(state: GridState) -> float:
     score = clamp(state.metrics.task_score, SCORE_EPSILON, 1.0 - SCORE_EPSILON)
+    return round(score, 4)
+
+
+def grade_report(task_id: str, state: GridState) -> Dict[str, object]:
     return {
-        "task_id": state.scenario.task_name,
-        "score": round(score, 4),
+        "task_id": task_id,
+        "score": grade_task(state),
         "breakdown": task_grade_breakdown(state),
     }
 
 
-def grade_weekday_spike(state: GridState) -> Dict[str, object]:
-    grade = grade_task(state)
-    grade["task_id"] = "weekday_spike"
-    return grade
+def grade_weekday_spike(state: GridState) -> float:
+    return grade_task(state)
 
 
-def grade_sunset_transition(state: GridState) -> Dict[str, object]:
-    grade = grade_task(state)
-    grade["task_id"] = "sunset_transition"
-    return grade
+def grade_sunset_transition(state: GridState) -> float:
+    return grade_task(state)
 
 
-def grade_heatwave_failure(state: GridState) -> Dict[str, object]:
-    grade = grade_task(state)
-    grade["task_id"] = "heatwave_failure"
-    return grade
+def grade_heatwave_failure(state: GridState) -> float:
+    return grade_task(state)
 
 
-def grade_storm_front_response(state: GridState) -> Dict[str, object]:
-    grade = grade_task(state)
-    grade["task_id"] = "storm_front_response"
-    return grade
+def grade_storm_front_response(state: GridState) -> float:
+    return grade_task(state)
 
 
-def grade_winter_gas_shortage(state: GridState) -> Dict[str, object]:
-    grade = grade_task(state)
-    grade["task_id"] = "winter_gas_shortage"
-    return grade
+def grade_winter_gas_shortage(state: GridState) -> float:
+    return grade_task(state)
 
 
-GRADERS: Dict[str, Callable[[GridState], Dict[str, object]]] = {
+GRADERS: Dict[str, Callable[[GridState], float]] = {
     "weekday_spike": grade_weekday_spike,
     "sunset_transition": grade_sunset_transition,
     "heatwave_failure": grade_heatwave_failure,
