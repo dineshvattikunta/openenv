@@ -78,11 +78,11 @@ SUCCESS_THRESHOLDS = {
 }
 
 TASK_GRADERS = {
-    "weekday_spike": "grader.grade_weekday_spike",
-    "sunset_transition": "grader.grade_sunset_transition",
-    "heatwave_failure": "grader.grade_heatwave_failure",
-    "storm_front_response": "grader.grade_storm_front_response",
-    "winter_gas_shortage": "grader.grade_winter_gas_shortage",
+    "weekday_spike": "graders.grade_weekday_spike",
+    "sunset_transition": "graders.grade_sunset_transition",
+    "heatwave_failure": "graders.grade_heatwave_failure",
+    "storm_front_response": "graders.grade_storm_front_response",
+    "winter_gas_shortage": "graders.grade_winter_gas_shortage",
 }
 
 API_ENV = GridLoadBalancerEnv(task_name="weekday_spike")
@@ -308,7 +308,7 @@ def get_tasks():
                     "winter_gas_shortage": 13,
                 }.get(task_id, 10),
                 "success_threshold": SUCCESS_THRESHOLDS.get(task_id, 0.5),
-                "grader": TASK_GRADERS.get(task_id, "grader.grade_weekday_spike"),
+                "grader": TASK_GRADERS.get(task_id, "graders.grade_weekday_spike"),
                 "grader_enabled": task_id in GRADERS,
             }
         )
@@ -366,7 +366,7 @@ def grader_env(task_id: str | None = None):
     scores = []
     for tid in list_tasks().keys():
         result = grade_env(tid)
-        scores.append({"task_id": tid, "score": result.get("score", 0.001)})
+        scores.append({"task_id": tid, "score": result.get("score", 0.01)})
     return {"scores": scores}
 
 

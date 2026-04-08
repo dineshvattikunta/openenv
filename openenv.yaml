@@ -29,7 +29,7 @@ tasks:
     description: Restore balance after a business district demand spike.
     max_steps: 8
     success_threshold: 0.75
-    grader: grader.grade_weekday_spike
+    grader: graders.grade_weekday_spike
   - id: sunset_transition
     name: Sunset Renewable Transition
     difficulty: medium
@@ -37,7 +37,7 @@ tasks:
     description: Handle the evening peak while solar fades and wind varies.
     max_steps: 10
     success_threshold: 0.70
-    grader: grader.grade_sunset_transition
+    grader: graders.grade_sunset_transition
   - id: heatwave_failure
     name: Heatwave Generator Failure
     difficulty: hard
@@ -45,7 +45,7 @@ tasks:
     description: Protect critical infrastructure after generator failure during a heatwave.
     max_steps: 12
     success_threshold: 0.40
-    grader: grader.grade_heatwave_failure
+    grader: graders.grade_heatwave_failure
   - id: storm_front_response
     name: Storm Front Response
     difficulty: medium
@@ -53,7 +53,7 @@ tasks:
     description: Maintain service during a storm front with repeated line derates and feeder faults.
     max_steps: 11
     success_threshold: 0.62
-    grader: grader.grade_storm_front_response
+    grader: graders.grade_storm_front_response
   - id: winter_gas_shortage
     name: Winter Gas Shortage
     difficulty: hard
@@ -61,7 +61,7 @@ tasks:
     description: Protect critical zones during a winter peak while major gas generation is intermittently unavailable.
     max_steps: 13
     success_threshold: 0.45
-    grader: grader.grade_winter_gas_shortage
+    grader: graders.grade_winter_gas_shortage
 reward:
   type: shaped
   description: >
