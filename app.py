@@ -291,7 +291,7 @@ def get_tasks():
                 "difficulty": meta["difficulty"],
                 "objective": meta["objective"],
                 "success_threshold": SUCCESS_THRESHOLDS.get(task_id, 0.5),
-                "grader": f"graders.graders.grade_task:{task_id}",
+                "grader": True,
             }
         )
     return {"tasks": tasks}
@@ -323,7 +323,6 @@ def grade_env(task_id: str):
     state = env.state()
     grade = grade_task(state)
     grade["breakdown"] = task_grade_breakdown(state)
-    grade["steps"] = len(state.metrics.reward_history)
     env.close()
     return grade
 
