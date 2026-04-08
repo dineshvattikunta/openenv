@@ -13,7 +13,7 @@ Grid Load Balancer is a real-world OpenEnv-style environment where an AI agent a
 This repository includes:
 
 - a deterministic simulator
-- 3 graded tasks from easy to hard
+- 5 graded tasks from easy to hard
 - typed Pydantic models for action, observation, and state
 - a root-level `inference.py` using the OpenAI client
 - a baseline heuristic
@@ -50,6 +50,18 @@ It is operational, explainable, and easy to judge.
 - Difficulty: hard
 - Scenario: 15 zones, heatwave demand, main generator failure, critical infrastructure under risk
 - Objective: protect critical zones and avoid cascading outages
+
+### `storm_front_response`
+
+- Difficulty: medium
+- Scenario: 8 zones, severe storm front, repeated line derates and feeder faults
+- Objective: keep critical services online while transfer capacity is unstable
+
+### `winter_gas_shortage`
+
+- Difficulty: hard
+- Scenario: 15 zones, winter peak demand, intermittent gas generation failures
+- Objective: preserve critical uptime when supply-side outages and import limits overlap
 
 ## Observation space
 

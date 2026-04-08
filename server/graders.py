@@ -65,3 +65,11 @@ def grade_sunset_transition(*args: Any, **kwargs: Any) -> float:
 
 def grade_heatwave_failure(*args: Any, **kwargs: Any) -> float:
     return _extract_score(*args, **kwargs)
+
+
+def grade_storm_front_response(*args: Any, **kwargs: Any) -> float:
+    return _extract_score(*args, **kwargs)
+
+
+def grade_winter_gas_shortage(*args: Any, **kwargs: Any) -> float:
+    return _extract_score(*args, **kwargs)

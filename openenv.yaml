@@ -46,6 +46,22 @@ tasks:
     max_steps: 12
     success_threshold: 0.40
     grader: server.graders.grade_heatwave_failure
+  - id: storm_front_response
+    name: Storm Front Response
+    difficulty: medium
+    objective: Maintain service during a storm front with repeated line derates and feeder faults.
+    description: Maintain service during a storm front with repeated line derates and feeder faults.
+    max_steps: 11
+    success_threshold: 0.62
+    grader: server.graders.grade_storm_front_response
+  - id: winter_gas_shortage
+    name: Winter Gas Shortage
+    difficulty: hard
+    objective: Protect critical zones during a winter peak while major gas generation is intermittently unavailable.
+    description: Protect critical zones during a winter peak while major gas generation is intermittently unavailable.
+    max_steps: 13
+    success_threshold: 0.45
+    grader: server.graders.grade_winter_gas_shortage
 reward:
   type: shaped
   description: >

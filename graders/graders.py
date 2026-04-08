@@ -48,8 +48,22 @@ def grade_heatwave_failure(state: GridState) -> Dict[str, object]:
     return grade
 
 
+def grade_storm_front_response(state: GridState) -> Dict[str, object]:
+    grade = grade_task(state)
+    grade["task_id"] = "storm_front_response"
+    return grade
+
+
+def grade_winter_gas_shortage(state: GridState) -> Dict[str, object]:
+    grade = grade_task(state)
+    grade["task_id"] = "winter_gas_shortage"
+    return grade
+
+
 GRADERS: Dict[str, Callable[[GridState], Dict[str, object]]] = {
     "weekday_spike": grade_weekday_spike,
     "sunset_transition": grade_sunset_transition,
     "heatwave_failure": grade_heatwave_failure,
+    "storm_front_response": grade_storm_front_response,
+    "winter_gas_shortage": grade_winter_gas_shortage,
 }

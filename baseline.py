@@ -5,6 +5,7 @@ from typing import Dict, List
 
 from env.engine import GridLoadBalancerEnv
 from env.models import BatteryCommand, GeneratorCommand, GridAction, LoadShedCommand, PowerTransfer
+from env.tasks import list_tasks
 
 
 def heuristic_action(observation) -> GridAction:
@@ -67,7 +68,13 @@ def heuristic_action(observation) -> GridAction:
             if remaining <= 1.0:
                 break
 
-    import_caps = {"weekday_spike": 18.0, "sunset_transition": 30.0, "heatwave_failure": 38.0}
+    import_caps = {
+        "weekday_spike": 18.0,
+        "sunset_transition": 30.0,
+        "heatwave_failure": 38.0,
+        "storm_front_response": 34.0,
+        "winter_gas_shortage": 34.0,
+    }
     residual_gap = sum(max(0.0, zone.demand_mw - zone.local_generation_mw) for zone in observation.zones)
     neighbor_import_mw = min(import_caps.get(observation.task_name, 20.0), residual_gap) if residual_gap > 0 else 0.0
 
@@ -105,4 +112,4 @@ def run_baseline(task_name: str) -> Dict[str, float]:
 
 
 if __name__ == "__main__":
-    print(json.dumps({task: run_baseline(task) for task in ("weekday_spike", "sunset_transition", "heatwave_failure")}, indent=2))
+    print(json.dumps({task: run_baseline(task) for task in list_tasks().keys()}, indent=2))

@@ -9,6 +9,8 @@ WEATHER_BY_TASK = {
     "weekday_spike": "clear",
     "sunset_transition": "sunset_windy",
     "heatwave_failure": "heatwave",
+    "storm_front_response": "storm_front",
+    "winter_gas_shortage": "cold_wave",
 }
 
 
@@ -16,11 +18,17 @@ TIME_OF_DAY_BY_TASK = {
     "weekday_spike": "14:00",
     "sunset_transition": "18:30",
     "heatwave_failure": "15:45",
+    "storm_front_response": "19:10",
+    "winter_gas_shortage": "07:20",
 }
 
 
 def _repeat(values: List[float], target: int) -> List[float]:
     return values[:target] if len(values) >= target else values + [values[-1]] * (target - len(values))
+
+
+def _scale_profile(values: List[float], factor: float, low: float, high: float) -> List[float]:
+    return [max(low, min(high, round(value * factor, 3))) for value in values]
 
 
 def build_weekday_spike() -> TaskScenario:
@@ -202,10 +210,68 @@ def build_heatwave_failure() -> TaskScenario:
     )
 
 
+def build_storm_front_response() -> TaskScenario:
+    scenario = build_sunset_transition().model_copy(deep=True)
+    scenario.task_name = "storm_front_response"
+    scenario.difficulty = "medium"
+    scenario.max_steps = 11
+    scenario.line_capacity_mw = 36
+    scenario.neighbor_import_capacity_mw = 36
+    scenario.objective = "Maintain service during a storm front with repeated line derates and feeder faults."
+
+    scenario.demand_profile = {
+        zone_id: _repeat(_scale_profile(profile, 1.06, 0.92, 1.34), scenario.max_steps)
+        for zone_id, profile in scenario.demand_profile.items()
+    }
+    scenario.renewable_profile = {
+        zone_id: _repeat(_scale_profile(profile, 0.84, 0.06, 0.82), scenario.max_steps)
+        for zone_id, profile in scenario.renewable_profile.items()
+    }
+    # Coastal wind swings during the storm.
+    scenario.renewable_profile["south"] = _repeat([0.62, 0.40, 0.58, 0.30, 0.55, 0.28, 0.52, 0.34, 0.46, 0.38, 0.35], scenario.max_steps)
+    scenario.renewable_profile["harbor"] = _repeat([0.66, 0.44, 0.60, 0.32, 0.54, 0.30, 0.50, 0.36, 0.48, 0.40, 0.36], scenario.max_steps)
+    scenario.events = [
+        TaskEvent(step=2, event_type="line_derate", target_id="global", value=0.82, duration_steps=2, note="Storm gusts reduce line transfer limits."),
+        TaskEvent(step=5, event_type="fault", target_id="harbor", duration_steps=2, note="Harbor feeder fault interrupts local routing."),
+        TaskEvent(step=7, event_type="line_derate", target_id="global", value=0.72, duration_steps=3, note="Peak storm window causes major transfer derating."),
+        TaskEvent(step=9, event_type="fault", target_id="north", duration_steps=1, note="North substation auto-trip during lightning."),
+    ]
+    return scenario
+
+
+def build_winter_gas_shortage() -> TaskScenario:
+    scenario = build_heatwave_failure().model_copy(deep=True)
+    scenario.task_name = "winter_gas_shortage"
+    scenario.difficulty = "hard"
+    scenario.max_steps = 13
+    scenario.line_capacity_mw = 44
+    scenario.neighbor_import_capacity_mw = 34
+    scenario.objective = "Protect critical zones during a winter peak while major gas generation is intermittently unavailable."
+
+    scenario.demand_profile = {
+        zone_id: _repeat(_scale_profile(profile, 1.04, 0.96, 1.35), scenario.max_steps)
+        for zone_id, profile in scenario.demand_profile.items()
+    }
+    scenario.renewable_profile = {
+        zone_id: _repeat(_scale_profile(profile, 0.90, 0.08, 0.78), scenario.max_steps)
+        for zone_id, profile in scenario.renewable_profile.items()
+    }
+    scenario.events = [
+        TaskEvent(step=2, event_type="generator_failure", target_id="main_g1", note="Main combined-cycle unit trips from fuel pressure instability."),
+        TaskEvent(step=4, event_type="generator_failure", target_id="gas_n1", note="North peaker loses gas feed during pressure drop."),
+        TaskEvent(step=6, event_type="fault", target_id="industrial", duration_steps=2, note="Industrial substation relay fault under heavy draw."),
+        TaskEvent(step=8, event_type="line_derate", target_id="global", value=0.76, duration_steps=3, note="Icing conditions derate transmission capacity."),
+        TaskEvent(step=11, event_type="generator_failure", target_id="gas_s1", note="South peaker forced offline due low pipeline pressure."),
+    ]
+    return scenario
+
+
 TASK_BUILDERS = {
     "weekday_spike": build_weekday_spike,
     "sunset_transition": build_sunset_transition,
     "heatwave_failure": build_heatwave_failure,
+    "storm_front_response": build_storm_front_response,
+    "winter_gas_shortage": build_winter_gas_shortage,
 }
 
 

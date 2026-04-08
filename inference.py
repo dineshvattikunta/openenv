@@ -20,6 +20,8 @@ SUCCESS_THRESHOLDS = {
     "weekday_spike": 0.75,
     "sunset_transition": 0.70,
     "heatwave_failure": 0.40,
+    "storm_front_response": 0.62,
+    "winter_gas_shortage": 0.45,
 }
 
 
