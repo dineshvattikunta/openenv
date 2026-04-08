@@ -331,7 +331,7 @@ def validate_env():
 @app.get("/grade/{task_id}")
 def grade_env(task_id: str):
     if task_id not in GRADERS:
-        return {"task_id": task_id, "score": 0.001, "breakdown": {"error_score": 0.001}}
+        return {"task_id": task_id, "score": 0.01, "breakdown": {"error_score": 0.01}}
     env = GridLoadBalancerEnv(task_name=task_id)
     observation = env.reset(task_name=task_id)
     done = False

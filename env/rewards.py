@@ -3,7 +3,7 @@ from __future__ import annotations
 from .models import GridMetrics, GridStepInfo, TaskScenario
 from .utils import clamp
 
-SCORE_EPSILON = 1e-3
+SCORE_EPSILON = 0.01
 
 
 def compute_step_reward(

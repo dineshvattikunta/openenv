@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-_EPS = 1e-3
+_EPS = 0.01
 _DEFAULT_SCORE = 0.5
 
 
