@@ -9,12 +9,15 @@ from env.utils import clamp
 
 def task_grade_breakdown(state: GridState) -> Dict[str, float]:
     metrics = state.metrics
+    def safe(value: float) -> float:
+        return round(clamp(value, SCORE_EPSILON, 1.0 - SCORE_EPSILON), 4)
+
     return {
-        "served_ratio": round(metrics.average_served_ratio, 4),
-        "critical_served_ratio": round(metrics.average_critical_served_ratio, 4),
-        "efficiency_ratio": round(metrics.average_efficiency_ratio, 4),
-        "cost_efficiency_ratio": round(1.0 - metrics.average_cost_ratio, 4),
-        "response_ratio": round(metrics.average_response_ratio, 4),
+        "served_ratio": safe(metrics.average_served_ratio),
+        "critical_served_ratio": safe(metrics.average_critical_served_ratio),
+        "efficiency_ratio": safe(metrics.average_efficiency_ratio),
+        "cost_efficiency_ratio": safe(1.0 - metrics.average_cost_ratio),
+        "response_ratio": safe(metrics.average_response_ratio),
     }
 
 
