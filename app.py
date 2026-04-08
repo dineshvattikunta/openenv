@@ -76,9 +76,9 @@ SUCCESS_THRESHOLDS = {
 }
 
 TASK_GRADERS = {
-    "weekday_spike": "graders.graders.grade_weekday_spike",
-    "sunset_transition": "graders.graders.grade_sunset_transition",
-    "heatwave_failure": "graders.graders.grade_heatwave_failure",
+    "weekday_spike": "server.graders.grade_weekday_spike",
+    "sunset_transition": "server.graders.grade_sunset_transition",
+    "heatwave_failure": "server.graders.grade_heatwave_failure",
 }
 
 API_ENV = GridLoadBalancerEnv(task_name="weekday_spike")
@@ -338,6 +338,25 @@ def grade_env(task_id: str):
     grade["breakdown"] = task_grade_breakdown(state)
     env.close()
     return grade
+
+
+@app.get("/grader/{task_id}")
+def grader_env_by_task(task_id: str):
+    # Alias endpoint for validators that expect /grader/{task_id}.
+    return grade_env(task_id)
+
+
+@app.get("/grader")
+def grader_env(task_id: str | None = None):
+    # Alias endpoint for validators that expect /grader or /grader?task_id=...
+    if task_id is not None:
+        return grade_env(task_id)
+
+    scores = []
+    for tid in list_tasks().keys():
+        result = grade_env(tid)
+        scores.append({"task_id": tid, "score": result.get("score", 0.001)})
+    return {"scores": scores}
 
 
 app = gr.mount_gradio_app(app, demo, path="/")

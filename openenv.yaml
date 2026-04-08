@@ -29,7 +29,7 @@ tasks:
     description: Restore balance after a business district demand spike.
     max_steps: 8
     success_threshold: 0.75
-    grader: graders.graders.grade_weekday_spike
+    grader: server.graders.grade_weekday_spike
   - id: sunset_transition
     name: Sunset Renewable Transition
     difficulty: medium
@@ -37,7 +37,7 @@ tasks:
     description: Handle the evening peak while solar fades and wind varies.
     max_steps: 10
     success_threshold: 0.70
-    grader: graders.graders.grade_sunset_transition
+    grader: server.graders.grade_sunset_transition
   - id: heatwave_failure
     name: Heatwave Generator Failure
     difficulty: hard
@@ -45,7 +45,7 @@ tasks:
     description: Protect critical infrastructure after generator failure during a heatwave.
     max_steps: 12
     success_threshold: 0.40
-    grader: graders.graders.grade_heatwave_failure
+    grader: server.graders.grade_heatwave_failure
 reward:
   type: shaped
   description: >
@@ -57,6 +57,8 @@ endpoints:
   state: GET /state
   tasks: GET /tasks
   validate: GET /validate
+  grader: GET /grader
+  grader_task: GET /grader/{task_id}
   grade: GET /grade/{task_id}
 runtime:
   port: 7860
