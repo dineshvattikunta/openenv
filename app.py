@@ -308,8 +308,8 @@ def get_tasks():
                     "winter_gas_shortage": 13,
                 }.get(task_id, 10),
                 "success_threshold": SUCCESS_THRESHOLDS.get(task_id, 0.5),
-                "grader": task_id in GRADERS,
-                "grader_path": TASK_GRADERS.get(task_id, "grader.grade_weekday_spike"),
+                "grader": TASK_GRADERS.get(task_id, "grader.grade_weekday_spike"),
+                "grader_enabled": task_id in GRADERS,
             }
         )
     return {"tasks": tasks}
