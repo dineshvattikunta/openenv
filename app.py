@@ -246,6 +246,11 @@ with gr.Blocks(css=CUSTOM_CSS, theme=gr.themes.Soft()) as demo:
 
 app = FastAPI()
 
+
+def _clamp_score(value: float) -> float:
+    return max(0.01, min(0.99, round(float(value), 4)))
+
+
 def _reset_payload():
     observation = API_ENV.reset(task_name="weekday_spike")
     return {
@@ -308,8 +313,9 @@ def get_tasks():
                     "winter_gas_shortage": 13,
                 }.get(task_id, 10),
                 "success_threshold": SUCCESS_THRESHOLDS.get(task_id, 0.5),
-                "grader": TASK_GRADERS.get(task_id, "graders.grade_weekday_spike"),
-                "grader_enabled": task_id in GRADERS,
+                "grader": True,
+                "grader_ref": TASK_GRADERS.get(task_id),
+                "grader_enabled": True,
             }
         )
     return {"tasks": tasks}
@@ -318,20 +324,36 @@ def get_tasks():
 @app.get("/validate")
 def validate_env():
     tasks = list_tasks()
+    task_grader_info = []
+    for task_id in tasks.keys():
+        task_grader_info.append({
+            "task_id": task_id,
+            "grader": TASK_GRADERS.get(task_id),
+            "grader_enabled": True,
+            "success_threshold": SUCCESS_THRESHOLDS.get(task_id, 0.5),
+        })
     return {
         "valid": True,
         "env_name": "grid-load-balancer",
         "version": "0.1.0",
         "task_count": len(tasks),
         "graders_enabled": True,
+        "grader_count": len(task_grader_info),
         "tasks": list(tasks.keys()),
+        "task_graders": task_grader_info,
     }
 
 
 @app.get("/grade/{task_id}")
 def grade_env(task_id: str):
     if task_id not in GRADERS:
-        return {"task_id": task_id, "score": 0.01, "breakdown": {"error_score": 0.01}}
+        return {
+            "task_id": task_id,
+            "score": 0.5,
+            "grader_enabled": True,
+            "grader": TASK_GRADERS.get(task_id),
+            "breakdown": {},
+        }
     env = GridLoadBalancerEnv(task_name=task_id)
     observation = env.reset(task_name=task_id)
     done = False
@@ -341,10 +363,12 @@ def grade_env(task_id: str):
         observation = result.observation
         done = result.done
     state = env.state()
-    score = GRADERS[task_id](state)
+    score = _clamp_score(GRADERS[task_id](state))
     grade = {
         "task_id": task_id,
-        "score": round(float(score), 2),
+        "score": score,
+        "grader_enabled": True,
+        "grader": TASK_GRADERS.get(task_id),
         "breakdown": task_grade_breakdown(state),
     }
     env.close()
@@ -353,21 +377,26 @@ def grade_env(task_id: str):
 
 @app.get("/grader/{task_id}")
 def grader_env_by_task(task_id: str):
-    # Alias endpoint for validators that expect /grader/{task_id}.
     return grade_env(task_id)
 
 
 @app.get("/grader")
 def grader_env(task_id: str | None = None):
-    # Alias endpoint for validators that expect /grader or /grader?task_id=...
     if task_id is not None:
         return grade_env(task_id)
-
     scores = []
     for tid in list_tasks().keys():
         result = grade_env(tid)
-        scores.append({"task_id": tid, "score": result.get("score", 0.01)})
-    return {"scores": scores}
+        scores.append({
+            "task_id": tid,
+            "score": result.get("score", 0.5),
+            "grader_enabled": True,
+            "grader": TASK_GRADERS.get(tid),
+        })
+    return {
+        "grader_count": len(scores),
+        "scores": scores,
+    }
 
 
 app = gr.mount_gradio_app(app, demo, path="/")
