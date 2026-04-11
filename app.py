@@ -304,6 +304,7 @@ def get_tasks():
                 "id": task_id,
                 "name": task_id.replace("_", " ").title(),
                 "difficulty": meta["difficulty"],
+                "objective": meta["objective"],
                 "description": meta["objective"],
                 "max_steps": {
                     "weekday_spike": 8,
@@ -313,8 +314,7 @@ def get_tasks():
                     "winter_gas_shortage": 13,
                 }.get(task_id, 10),
                 "success_threshold": SUCCESS_THRESHOLDS.get(task_id, 0.5),
-                "grader": True,
-                "grader_ref": TASK_GRADERS.get(task_id),
+                "grader": TASK_GRADERS.get(task_id),
                 "grader_enabled": True,
             }
         )
@@ -349,7 +349,7 @@ def grade_env(task_id: str):
     if task_id not in GRADERS:
         return {
             "task_id": task_id,
-            "score": 0.5,
+            "score": _clamp_score(0.5),
             "grader_enabled": True,
             "grader": TASK_GRADERS.get(task_id),
             "breakdown": {},
@@ -366,7 +366,7 @@ def grade_env(task_id: str):
     score = _clamp_score(GRADERS[task_id](state))
     grade = {
         "task_id": task_id,
-        "score": score,
+        "score": _clamp_score(score),
         "grader_enabled": True,
         "grader": TASK_GRADERS.get(task_id),
         "breakdown": task_grade_breakdown(state),
@@ -389,14 +389,11 @@ def grader_env(task_id: str | None = None):
         result = grade_env(tid)
         scores.append({
             "task_id": tid,
-            "score": result.get("score", 0.5),
+            "score": _clamp_score(result.get("score", 0.5)),
             "grader_enabled": True,
             "grader": TASK_GRADERS.get(tid),
         })
-    return {
-        "grader_count": len(scores),
-        "scores": scores,
-    }
+    return {"scores": scores}
 
 
 app = gr.mount_gradio_app(app, demo, path="/")

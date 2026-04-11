@@ -14,7 +14,6 @@ from env.utils import action_to_log_string, extract_json_object
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("API_KEY", "")
-TASK_NAME = os.getenv("POWER_GRID_TASK", "weekday_spike")
 BENCHMARK = "power_grid"
 SUCCESS_THRESHOLDS = {
     "weekday_spike": 0.75,
@@ -23,6 +22,17 @@ SUCCESS_THRESHOLDS = {
     "storm_front_response": 0.62,
     "winter_gas_shortage": 0.45,
 }
+ALL_TASKS = [
+    "weekday_spike",
+    "sunset_transition",
+    "heatwave_failure",
+    "storm_front_response",
+    "winter_gas_shortage",
+]
+
+
+def _clamp(value: float) -> float:
+    return max(0.01, min(0.99, round(float(value), 4)))
 
 
 def log_start(task: str, env: str, model: str) -> None:
@@ -36,8 +46,12 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
     )
 
 
-def log_end(success: bool, steps: int, rewards: List[float]) -> None:
-    print(f"[END] success={str(success).lower()} steps={steps} rewards={','.join(f'{r:.2f}' for r in rewards)}", flush=True)
+def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+    clamped = _clamp(score)
+    print(
+        f"[END] success={str(success).lower()} steps={steps} score={clamped:.4f} rewards={','.join(f'{r:.2f}' for r in rewards)}",
+        flush=True,
+    )
 
 
 def build_prompt(observation) -> str:
@@ -82,15 +96,16 @@ def model_action(client: Optional[OpenAI], observation) -> GridAction:
         return fallback
 
 
-def main() -> None:
-    env = GridLoadBalancerEnv(task_name=TASK_NAME)
+def run_task(task_name: str) -> None:
+    env = GridLoadBalancerEnv(task_name=task_name)
     client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN) if HF_TOKEN else None
     rewards: List[float] = []
     steps_taken = 0
     success = False
-    log_start(task=TASK_NAME, env=BENCHMARK, model=MODEL_NAME)
+    score = 0.5
+    log_start(task=task_name, env=BENCHMARK, model=MODEL_NAME)
     try:
-        observation = env.reset(task_name=TASK_NAME)
+        observation = env.reset(task_name=task_name)
         done = False
         while not done:
             action = model_action(client, observation)
@@ -100,10 +115,23 @@ def main() -> None:
             log_step(steps_taken, action_to_log_string(action), result.reward, result.done, result.info.last_action_error)
             observation = result.observation
             done = result.done
-        success = env.state().metrics.task_score >= SUCCESS_THRESHOLDS.get(TASK_NAME, 0.7)
+        raw_score = env.state().metrics.task_score
+        score = _clamp(raw_score)
+        success = raw_score >= SUCCESS_THRESHOLDS.get(task_name, 0.7)
     finally:
         env.close()
-        log_end(success=success, steps=steps_taken, rewards=rewards)
+        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+
+
+def main() -> None:
+    tasks_env = os.getenv("POWER_GRID_TASKS", "")
+    if tasks_env:
+        tasks = [t.strip() for t in tasks_env.split(",") if t.strip()]
+    else:
+        tasks = ALL_TASKS
+
+    for task_name in tasks:
+        run_task(task_name)
 
 
 if __name__ == "__main__":
